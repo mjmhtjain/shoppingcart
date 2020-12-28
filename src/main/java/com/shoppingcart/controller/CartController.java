@@ -6,13 +6,10 @@ import com.shoppingcart.repository.CartRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,22 +37,39 @@ public class CartController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/add/{id}")
     public Mono<Cart> addItem(@RequestBody Item item,
                               @PathVariable String id) {
         logger.info("Item: {}, \n Id:{}", item, id);
 
         return cartRepository.findById(id)
-                .log()
                 .flatMap(cart -> {
                     List<Item> list = cart.getItemList();
-                    if(list == null){
+                    if (list == null) {
                         list = new ArrayList<>();
                     }
 
                     list.add(item);
                     cart.setItemList(list);
                     logger.info("Updated Cart: {}", cart);
+                    return cartRepository.save(cart);
+                });
+    }
+
+
+    @PutMapping("/remove/{id}")
+    public Mono<Cart> removeItem(@RequestBody Item item,
+                                 @PathVariable String id) {
+        logger.info("Item: {}, \n Id:{}", item, id);
+
+        return cartRepository.findById(id)
+                .flatMap(cart -> {
+                    List<Item> list = cart.getItemList();
+                    if (list == null) return Mono.just(cart);
+
+                    list.removeIf(cartItem -> cartItem.getId().equals(item.getId()));
+
+                    cart.setItemList(list);
                     return cartRepository.save(cart);
                 });
     }
