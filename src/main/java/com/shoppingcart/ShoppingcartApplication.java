@@ -28,11 +28,6 @@ public class ShoppingcartApplication {
                     new Cart("14", "Cart3"))
                     .flatMap(cart -> cartRepository.save(cart));
 
-
-//            cartFlux
-//                    .thenMany(cartRepository.findAll())
-//                    .subscribe(System.out::println);
-
             operations.collectionExists(Cart.class)
                     .flatMap(exists -> exists ? operations.dropCollection(Cart.class) : Mono.just(exists))
                     .thenMany(operations.createCollection(Cart.class))

@@ -1,6 +1,7 @@
 package com.shoppingcart.controller;
 
 import com.shoppingcart.model.Cart;
+import com.shoppingcart.model.Item;
 import com.shoppingcart.repository.CartRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @RestController
@@ -23,6 +26,11 @@ public class CartController {
     @Autowired
     CartRepository cartRepository;
 
+    @GetMapping
+    public Flux<Cart> getAllCart() {
+        return cartRepository.findAll();
+    }
+
     @GetMapping("/{id}")
     public Mono<ResponseEntity<Cart>> getProduct(@PathVariable String id) {
         logger.info("received id:" + id);
@@ -32,9 +40,24 @@ public class CartController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @GetMapping
-    public Flux<Cart> getAllProduct() {
-        return cartRepository.findAll();
+    @PutMapping("/{id}")
+    public Mono<Cart> addItem(@RequestBody Item item,
+                              @PathVariable String id) {
+        logger.info("Item: {}, \n Id:{}", item, id);
+
+        return cartRepository.findById(id)
+                .log()
+                .flatMap(cart -> {
+                    List<Item> list = cart.getItemList();
+                    if(list == null){
+                        list = new ArrayList<>();
+                    }
+
+                    list.add(item);
+                    cart.setItemList(list);
+                    logger.info("Updated Cart: {}", cart);
+                    return cartRepository.save(cart);
+                });
     }
 
 }

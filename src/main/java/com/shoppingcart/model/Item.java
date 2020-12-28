@@ -34,6 +34,14 @@ public class Item {
         return Objects.hash(Id, name);
     }
 
+    @Override
+    public String toString() {
+        return "Item{" +
+                "Id='" + Id + '\'' +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
     //getters setters
     public String getId() {
         return Id;
