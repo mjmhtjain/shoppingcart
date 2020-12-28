@@ -32,7 +32,7 @@ public class CartController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Cart>> getProduct(@PathVariable String id) {
+    public Mono<ResponseEntity<Cart>> getCart(@PathVariable String id) {
         logger.info("received id:" + id);
 
         return cartRepository.findById(id)
