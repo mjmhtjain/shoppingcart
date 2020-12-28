@@ -9,7 +9,7 @@ import java.util.Objects;
 public class Item {
 
     @Id
-    private String Id;
+    private String id;
 
     private String name;
 
@@ -17,7 +17,7 @@ public class Item {
     }
 
     public Item(String id, String name) {
-        Id = id;
+        this.id = id;
         this.name = name;
     }
 
@@ -26,29 +26,28 @@ public class Item {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Item item = (Item) o;
-        return Id.equals(item.Id) && name.equals(item.name);
+        return Objects.equals(id, item.id) && Objects.equals(name, item.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Id, name);
+        return Objects.hash(id, name);
     }
 
     @Override
     public String toString() {
         return "Item{" +
-                "Id='" + Id + '\'' +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 '}';
     }
 
-    //getters setters
     public String getId() {
-        return Id;
+        return id;
     }
 
     public void setId(String id) {
-        Id = id;
+        this.id = id;
     }
 
     public String getName() {
