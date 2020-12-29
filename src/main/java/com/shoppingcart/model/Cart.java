@@ -18,9 +18,10 @@ public class Cart {
     public Cart() {
     }
 
-    public Cart(String id, String name) {
-        id = id;
+    public Cart(String id, String name, List<Item> itemList) {
+        this.id = id;
         this.name = name;
+        this.itemList = itemList;
     }
 
     @Override
