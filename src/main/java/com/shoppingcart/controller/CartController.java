@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,25 +85,28 @@ public class CartController {
     ) {
         logger.info("cartId: {}, itemId: {}, quantity: {}", cartId, itemId, incrQuantity);
 
-        Mono<Boolean> response = confirmInventory(cartId, itemId, incrQuantity);
-        Mono<ResponseEntity<String>> successResponse = response
-                .filter(resp -> resp)
-                .flatMap(resp -> updateCartItemQuantity(cartId, itemId, incrQuantity))
-                .map(cart -> {
-                    if (cart != null) {
-                        return ResponseEntity.ok("inventory added");
+        Mono<Boolean> validInventoryCheck = checkInventory(cartId, itemId, incrQuantity);
+
+        Mono<ResponseEntity<String>> responseEntityMono = validInventoryCheck
+                .flatMap(resp -> {
+                    if (resp) {
+                        return updateCartItemQuantity(cartId, itemId, incrQuantity)
+                                .flatMap(cart -> {
+                                    if (cart != null) {
+                                        return Mono.just(ResponseEntity.ok("inventory added"));
+                                    }
+
+                                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                            .body("inventory check failed"));
+                                });
                     }
 
-                    return ResponseEntity.badRequest().body("inventory check failed");
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("inventory check failed"));
                 });
 
-        Mono<ResponseEntity<String>> failedResponse = response.filter(resp -> !resp)
-                .map(resp -> {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("inventory check failed");
-                });
 
-        return successResponse.switchIfEmpty(failedResponse);
+        return responseEntityMono;
     }
 
     private Mono<Cart> updateCartItemQuantity(
@@ -113,7 +117,7 @@ public class CartController {
         );
     }
 
-    private Mono<Boolean> confirmInventory(
+    private Mono<Boolean> checkInventory(
             String cartId,
             String itemId,
             int incrQuantity
