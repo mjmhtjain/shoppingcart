@@ -7,15 +7,13 @@ import com.shoppingcart.repository.ItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 @RestController
@@ -38,7 +36,6 @@ public class CartController {
     @GetMapping("/{id}")
     public Mono<Cart> getCart(@PathVariable String id) {
         logger.info("received id:" + id);
-
         return cartRepository.findById(id);
     }
 
@@ -80,25 +77,73 @@ public class CartController {
     }
 
     @PutMapping("/itemIncr")
-    public Mono<Cart> incrQuantity(
+    public Mono<ResponseEntity<String>> incrQuantity(
             @RequestParam String cartId,
             @RequestParam String itemId,
-            @RequestParam int quantity
+            @RequestParam int incrQuantity
     ) {
+        logger.info("cartId: {}, itemId: {}, quantity: {}", cartId, itemId, incrQuantity);
 
-        logger.info("cartId: {}, \n itemId:{}, \n quantity:{}", cartId, itemId, quantity);
+        Mono<Boolean> response = confirmInventory(cartId, itemId, incrQuantity);
+        Mono<ResponseEntity<String>> successResponse = response
+                .filter(resp -> resp)
+                .flatMap(resp -> updateCartItemQuantity(cartId, itemId, incrQuantity))
+                .map(cart -> {
+                    if (cart != null) {
+                        return ResponseEntity.ok("inventory added");
+                    }
 
-        Mono<Cart> updatedCart = updateCartItemQuantity(cartId, itemId, quantity);
-//        inventoryConfirmation(updatedCart);
+                    return ResponseEntity.badRequest().body("inventory check failed");
+                });
 
-        return updatedCart;
+        Mono<ResponseEntity<String>> failedResponse = response.filter(resp -> !resp)
+                .map(resp -> {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("inventory check failed");
+                });
+
+        return successResponse.switchIfEmpty(failedResponse);
     }
 
-    //confirm inventory on a separate thread
-    private void itemQuantityIncrementConfirmation(Mono<Cart> updatedCart) {
+    private Mono<Cart> updateCartItemQuantity(
 
+    ) {
+        return Mono.just(
+                new Cart(null, "Cart_Temp", new ArrayList<>())
+        );
     }
 
+    private Mono<Boolean> confirmInventory(
+            String cartId,
+            String itemId,
+            int incrQuantity
+    ) {
+        Mono<Boolean> defaultResponse = null;
+
+        Mono<Integer> cartItemQuantity = cartRepository.findById(cartId)
+                .map(cart -> cart.getItemList().stream()
+                        .filter(item -> item.getId() == itemId)
+                        .map(item -> item.getQuantity())
+                        .findFirst()
+                        .orElse(-1)
+                );
+
+        Mono<Integer> inventoryItemQuantity = itemRepository.findById(itemId)
+                .flatMap(item -> Mono.just(item.getQuantity()));
+
+        Mono<Integer> diff =
+                inventoryItemQuantity.mergeWith(
+                        cartItemQuantity.mergeWith(Mono.just(incrQuantity))
+                                .reduce(0, Integer::sum)
+                                .map(i -> i * -1)
+                )
+                        .reduce(0, Integer::sum);
+
+
+        defaultResponse = diff.flatMap(i -> i >= 0 ? Mono.just(true) : Mono.just(false));
+
+        return defaultResponse;
+    }
 
     private Mono<Cart> updateCartItemQuantity(String cartId, String itemId, int incrQuantity) {
 
