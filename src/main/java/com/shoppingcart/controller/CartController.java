@@ -126,7 +126,7 @@ public class CartController {
 
         Mono<Integer> cartItemQuantity = cartRepository.findById(cartId)
                 .map(cart -> cart.getItemList().stream()
-                        .filter(item -> item.getId() == itemId)
+                        .filter(item -> item.getId().equals(itemId))
                         .map(item -> item.getQuantity())
                         .findFirst()
                         .orElse(-1)
