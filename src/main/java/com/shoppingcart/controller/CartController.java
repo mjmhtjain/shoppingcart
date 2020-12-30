@@ -83,7 +83,7 @@ public class CartController {
             @RequestParam String itemId,
             @RequestParam int incrQuantity
     ) {
-        logger.info("cartId: {}, itemId: {}, quantity: {}", cartId, itemId, incrQuantity);
+        logger.info("cartId: {}, itemId: {}, incrQuantity: {}", cartId, itemId, incrQuantity);
 
         Mono<Boolean> validInventoryCheck = checkInventory(cartId, itemId, incrQuantity);
 
@@ -91,6 +91,39 @@ public class CartController {
                 .flatMap(resp -> {
                     if (resp) {
                         return updateCartItemQuantity(cartId, itemId, incrQuantity)
+                                .flatMap(cart -> {
+                                    if (cart != null) {
+                                        return Mono.just(ResponseEntity.ok("inventory added"));
+                                    }
+
+                                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                            .body("inventory check failed"));
+                                });
+                    }
+
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("inventory check failed"));
+                });
+
+
+        return responseEntityMono;
+    }
+
+    @PutMapping("/itemDecr")
+    public Mono<ResponseEntity<String>> decrQuantity(
+            @RequestParam String cartId,
+            @RequestParam String itemId,
+            @RequestParam int decrQuantity
+    ) {
+        logger.info("cartId: {}, itemId: {}, decrQuantity: {}", cartId, itemId, decrQuantity);
+        int negatedQuantity = decrQuantity * (-1);
+
+        Mono<Boolean> validInventoryCheck = checkInventory(cartId, itemId, negatedQuantity);
+
+        Mono<ResponseEntity<String>> responseEntityMono = validInventoryCheck
+                .flatMap(resp -> {
+                    if (resp) {
+                        return updateCartItemQuantity(cartId, itemId, negatedQuantity)
                                 .flatMap(cart -> {
                                     if (cart != null) {
                                         return Mono.just(ResponseEntity.ok("inventory added"));
@@ -129,7 +162,7 @@ public class CartController {
                         .filter(item -> item.getId().equals(itemId))
                         .map(item -> item.getQuantity())
                         .findFirst()
-                        .orElse(-1)
+                        .orElse(Integer.MIN_VALUE)
                 );
 
         Mono<Integer> inventoryItemQuantity = itemRepository.findById(itemId)
