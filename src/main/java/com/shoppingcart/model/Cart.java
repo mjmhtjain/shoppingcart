@@ -1,72 +1,30 @@
 package com.shoppingcart.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
-import java.util.List;
-import java.util.Objects;
-
-@Document
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Table("cart")
 public class Cart {
     @Id
-    private String id;
+    @Column("id")
+    private int id;
 
-    private String name;
+    @Column("cartid")
+    private int cartId;
 
-    private List<Item> itemList;
+    @Column("itemid")
+    private int itemId;
 
-    public Cart() {
-    }
+    @Column("quantity")
+    private int quantity;
 
-    public Cart(String id, String name, List<Item> itemList) {
-        this.id = id;
-        this.name = name;
-        this.itemList = itemList;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Cart cart = (Cart) o;
-        return Objects.equals(id, cart.id) && Objects.equals(name, cart.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name);
-    }
-
-    @Override
-    public String toString() {
-        return "Cart{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", itemList=" + itemList +
-                '}';
-    }
-
-    public String getid() {
-        return id;
-    }
-
-    public void setid(String id) {
-        id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<Item> getItemList() {
-        return itemList;
-    }
-
-    public void setItemList(List<Item> itemList) {
-        this.itemList = itemList;
-    }
+    @Column("itemMetaData")
+    private String itemMetaData;
 }
