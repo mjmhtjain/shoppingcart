@@ -25,6 +25,6 @@ public class Cart {
     @Column("quantity")
     private int quantity;
 
-    @Column("itemMetaData")
+    @Column("itemmetadata")
     private String itemMetaData;
 }
