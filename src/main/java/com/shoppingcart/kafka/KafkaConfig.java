@@ -19,7 +19,7 @@ import java.util.Map;
 public class KafkaConfig {
 
     private final String KAFKA_SERVER_HOST = "127.0.0.1:9092";
-    private final String GROUP_ID = "myGroupId";
+    private final String GROUP_ID = "cart-service";
 
     @Bean
     public ProducerFactory<String, String> producerFactory() {

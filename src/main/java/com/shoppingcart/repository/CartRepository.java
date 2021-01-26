@@ -9,6 +9,9 @@ import reactor.core.publisher.Mono;
 public interface CartRepository extends
         ReactiveCrudRepository<Cart, Integer> {
 
+    @Query("TRUNCATE TABLE cart RESTART IDENTITY;")
+    Mono<Void> truncate();
+
     @Query("SELECT * FROM cart WHERE cartid = :cartid")
     Flux<Cart> fetchByCartId(int cartid);
 
