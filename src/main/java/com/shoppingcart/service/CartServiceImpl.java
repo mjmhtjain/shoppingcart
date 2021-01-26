@@ -46,6 +46,11 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    public Mono<Cart> fetchByCartIdItemId(int cartid, int itemid) {
+        return cartRepository.fetchByCartIdItemId(cartid, itemid);
+    }
+
+    @Override
     public Mono<Boolean> updateCart(int cartid, int itemid, int quantity) {
         CartItemValidationEvent cartItemValidationEvent =
                 new CartItemValidationEvent(cartid, itemid, quantity);
@@ -71,20 +76,38 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public void updateCartItemQuantity(CartItemValidationResponseEvent cartItemValidationResponseEvent) {
+        Cart defaultCart = new Cart(-1, -1, -1, "DefaultCartObject");
         if (!cartItemValidationResponseEvent.isValid()) return;
 
         cartRepository.fetchByCartIdItemId(cartItemValidationResponseEvent.getCartid(),
                 cartItemValidationResponseEvent.getItemid())
-                .switchIfEmpty(Mono.error(new Exception("Could not find the record")))
+                .defaultIfEmpty(defaultCart)
                 .flatMap(cart -> {
-                    cart.setQuantity(cartItemValidationResponseEvent.getQuantity());
-                    log.info("setting quantity: {}", cart);
-                    return cartRepository.save(cart);
+                    Mono<Cart> persistedCart;
+
+                    if (cart.getCartId() == -1) {
+                        log.info("cart entry does not exist");
+                        persistedCart = insertIntoCart(cartItemValidationResponseEvent);
+                    } else {
+                        log.info("updating cart");
+                        cart.setQuantity(cartItemValidationResponseEvent.getQuantity());
+                        persistedCart = cartRepository.save(cart);
+                    }
+
+                    return persistedCart;
                 })
-                .doOnError(err -> {
-                    log.info(err.toString());
-                })
+                .doOnNext(cart -> log.info("updated cart: {}", cart))
                 .subscribe();
+    }
+
+    private Mono<Cart> insertIntoCart(CartItemValidationResponseEvent cartItemValidationResponseEvent) {
+        Cart cart = new Cart(cartItemValidationResponseEvent.getCartid(),
+
+                cartItemValidationResponseEvent.getItemid(),
+                cartItemValidationResponseEvent.getQuantity(),
+                "item" + cartItemValidationResponseEvent.getItemid());
+
+        return cartRepository.save(cart);
     }
 
 }

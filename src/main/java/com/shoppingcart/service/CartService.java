@@ -11,6 +11,8 @@ public interface CartService {
 
     Flux<Cart> fetchByCartId(int cartid);
 
+    Mono<Cart> fetchByCartIdItemId(int cartid, int itemid);
+
     Mono<Boolean> updateCart(int cartid, int itemid, int quantity);
 
     void updateCartItemQuantity(CartItemValidationResponseEvent cartItemValidationResponseEvent);

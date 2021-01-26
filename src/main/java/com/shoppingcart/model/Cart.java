@@ -27,4 +27,11 @@ public class Cart {
 
     @Column("itemmetadata")
     private String itemMetaData;
+
+    public Cart(int cartId, int itemId, int quantity, String itemMetaData) {
+        this.cartId = cartId;
+        this.itemId = itemId;
+        this.quantity = quantity;
+        this.itemMetaData = itemMetaData;
+    }
 }

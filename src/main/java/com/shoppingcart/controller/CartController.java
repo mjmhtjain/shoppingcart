@@ -48,6 +48,17 @@ public class CartController {
         return cartService.fetchByCartId(cartid);
     }
 
+    @GetMapping("/fetchByCartIdItemId/{cartid}/{itemid}")
+    public Mono<Cart> fetchByCartIdItemId(@PathVariable int cartid,
+                                          @PathVariable int itemid) {
+        log.info("fetchByCartIdItemId, cartid: {}", cartid);
+
+        return cartService.fetchByCartIdItemId(cartid, itemid)
+                .doOnNext(cart -> {
+                    log.info(cart.toString());
+                });
+    }
+
     @GetMapping("/update/{cartid}/{itemid}/{quantity}")
     public Mono<Boolean> updateCart(@PathVariable int cartid,
                                     @PathVariable int itemid,
