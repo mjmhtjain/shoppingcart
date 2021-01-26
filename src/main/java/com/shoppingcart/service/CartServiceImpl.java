@@ -76,28 +76,39 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public void updateCartItemQuantity(CartItemValidationResponseEvent cartItemValidationResponseEvent) {
-        Cart defaultCart = new Cart(-1, -1, -1, "DefaultCartObject");
+        Cart cartObjForEmpty = new Cart(-1, -1, -1, "DefaultCartObject");
         if (!cartItemValidationResponseEvent.isValid()) return;
 
         cartRepository.fetchByCartIdItemId(cartItemValidationResponseEvent.getCartid(),
                 cartItemValidationResponseEvent.getItemid())
-                .defaultIfEmpty(defaultCart)
+                .defaultIfEmpty(cartObjForEmpty)
                 .flatMap(cart -> {
-                    Mono<Cart> persistedCart;
 
                     if (cart.getCartId() == -1) {
                         log.info("cart entry does not exist");
-                        persistedCart = insertIntoCart(cartItemValidationResponseEvent);
-                    } else {
-                        log.info("updating cart");
-                        cart.setQuantity(cartItemValidationResponseEvent.getQuantity());
-                        persistedCart = cartRepository.save(cart);
+                        return insertIntoCart(cartItemValidationResponseEvent);
                     }
 
-                    return persistedCart;
+                    if (cartItemValidationResponseEvent.getQuantity() > 0) {
+                        log.info("updating cart");
+                        return updateItemQuantity(cart, cartItemValidationResponseEvent);
+                    }
+
+                    log.info("removing cart entry");
+                    return removeItemFromCart(cart, cartItemValidationResponseEvent);
                 })
                 .doOnNext(cart -> log.info("updated cart: {}", cart))
                 .subscribe();
+    }
+
+    private Mono<Void> removeItemFromCart(Cart cart, CartItemValidationResponseEvent cartItemValidationResponseEvent) {
+        return cartRepository.deleteByCartIdItemId(cartItemValidationResponseEvent.getCartid(),
+                cartItemValidationResponseEvent.getItemid());
+    }
+
+    private Mono<Cart> updateItemQuantity(Cart cart, CartItemValidationResponseEvent cartItemValidationResponseEvent) {
+        cart.setQuantity(cartItemValidationResponseEvent.getQuantity());
+        return cartRepository.save(cart);
     }
 
     private Mono<Cart> insertIntoCart(CartItemValidationResponseEvent cartItemValidationResponseEvent) {

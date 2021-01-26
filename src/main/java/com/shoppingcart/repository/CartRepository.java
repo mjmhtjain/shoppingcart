@@ -17,4 +17,7 @@ public interface CartRepository extends
 
     @Query("SELECT * FROM cart WHERE cartid = :cartid and itemid = :itemid")
     Mono<Cart> fetchByCartIdItemId(int cartid, int itemid);
+
+    @Query("DELETE FROM cart WHERE cartid = :cartid and itemid = :itemid")
+    Mono<Void> deleteByCartIdItemId(int cartid, int itemid);
 }
