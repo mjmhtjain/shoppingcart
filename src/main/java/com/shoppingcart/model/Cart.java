@@ -14,7 +14,7 @@ import org.springframework.data.relational.core.mapping.Table;
 public class Cart {
     @Id
     @Column("id")
-    private int id;
+    private Long id;
 
     @Column("cartid")
     private int cartId;
